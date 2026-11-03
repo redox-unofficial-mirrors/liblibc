@@ -31,6 +31,20 @@ pub type id_t = c_uint;
 pub type uid_t = c_int;
 pub type gid_t = c_int;
 
+pub type Elf32_Addr = u32;
+pub type Elf32_Half = u16;
+pub type Elf32_Off = u32;
+pub type Elf32_Sword = i32;
+pub type Elf32_Word = u32;
+
+pub type Elf64_Addr = u64;
+pub type Elf64_Half = u16;
+pub type Elf64_Off = u64;
+pub type Elf64_Sword = i32;
+pub type Elf64_Sxword = i64;
+pub type Elf64_Word = u32;
+pub type Elf64_Xword = u64;
+
 extern_ty! {
     pub enum timezone {}
 }
@@ -81,6 +95,52 @@ s! {
         pub dli_fbase: *mut c_void,
         pub dli_sname: *const c_char,
         pub dli_saddr: *mut c_void,
+    }
+
+    pub struct dl_phdr_info {
+        #[cfg(target_pointer_width = "64")]
+        pub dlpi_addr: Elf64_Addr,
+        #[cfg(target_pointer_width = "32")]
+        pub dlpi_addr: Elf32_Addr,
+
+        pub dlpi_name: *const c_char,
+
+        #[cfg(target_pointer_width = "64")]
+        pub dlpi_phdr: *const Elf64_Phdr,
+        #[cfg(target_pointer_width = "32")]
+        pub dlpi_phdr: *const Elf32_Phdr,
+
+        #[cfg(target_pointer_width = "64")]
+        pub dlpi_phnum: Elf64_Half,
+        #[cfg(target_pointer_width = "32")]
+        pub dlpi_phnum: Elf32_Half,
+
+        pub dlpi_adds: c_ulonglong,
+        pub dlpi_subs: c_ulonglong,
+        pub dlpi_tls_modid: size_t,
+        pub dlpi_tls_data: *mut c_void,
+    }
+
+    pub struct Elf32_Phdr {
+        pub p_type: Elf32_Word,
+        pub p_offset: Elf32_Off,
+        pub p_vaddr: Elf32_Addr,
+        pub p_paddr: Elf32_Addr,
+        pub p_filesz: Elf32_Word,
+        pub p_memsz: Elf32_Word,
+        pub p_flags: Elf32_Word,
+        pub p_align: Elf32_Word,
+    }
+
+    pub struct Elf64_Phdr {
+        pub p_type: Elf64_Word,
+        pub p_flags: Elf64_Word,
+        pub p_offset: Elf64_Off,
+        pub p_vaddr: Elf64_Addr,
+        pub p_paddr: Elf64_Addr,
+        pub p_filesz: Elf64_Xword,
+        pub p_memsz: Elf64_Xword,
+        pub p_align: Elf64_Xword,
     }
 
     pub struct epoll_event {
@@ -997,27 +1057,48 @@ pub const _SC_OPEN_MAX: c_int = 4;
 pub const _SC_STREAM_MAX: c_int = 5;
 pub const _SC_TZNAME_MAX: c_int = 6;
 // ...
+pub const _SC_REALTIME_SIGNALS: c_int = 9;
+// ...
+pub const _SC_TIMERS: c_int = 11;
+// ...
+pub const _SC_SEMAPHORES: c_int = 21;
+pub const _SC_SHARED_MEMORY_OBJECTS: c_int = 22;
+// ...
 pub const _SC_VERSION: c_int = 29;
 pub const _SC_PAGESIZE: c_int = 30;
 pub const _SC_PAGE_SIZE: c_int = 30;
 // ...
+pub const _SC_SIGQUEUE_MAX: c_int = 34;
+// ...
 pub const _SC_RE_DUP_MAX: c_int = 44;
-
-pub const _SC_NPROCESSORS_CONF: c_int = 57;
-pub const _SC_NPROCESSORS_ONLN: c_int = 58;
-
+// ...
+pub const _SC_THREADS: c_int = 67;
 // ...
 pub const _SC_GETGR_R_SIZE_MAX: c_int = 69;
 pub const _SC_GETPW_R_SIZE_MAX: c_int = 70;
 pub const _SC_LOGIN_NAME_MAX: c_int = 71;
 pub const _SC_TTY_NAME_MAX: c_int = 72;
 // ...
+pub const _SC_THREAD_ATTR_STACKADDR: c_int = 77;
+pub const _SC_THREAD_ATTR_STACKSIZE: c_int = 78;
+// ...
+pub const _SC_NPROCESSORS_CONF: c_int = 83;
+pub const _SC_NPROCESSORS_ONLN: c_int = 84;
+pub const _SC_PHYS_PAGES: c_int = 85;
+pub const _SC_AVPHYS_PAGES: c_int = 86;
+// ...
+pub const _SC_BARRIERS: c_int = 133;
+// ...
+pub const _SC_MONOTONIC_CLOCK: c_int = 149;
+// ...
+pub const _SC_SHELL: c_int = 157;
+// ...
+pub const _SC_TIMEOUTS: c_int = 164;
+// ...
 pub const _SC_SYMLOOP_MAX: c_int = 173;
 // ...
 pub const _SC_HOST_NAME_MAX: c_int = 180;
 // ...
-pub const _SC_SIGQUEUE_MAX: c_int = 190;
-pub const _SC_REALTIME_SIGNALS: c_int = 191;
 // } POSIX.1
 
 // confstr
@@ -1248,6 +1329,18 @@ extern "C" {
         group: crate::gid_t,
         groups: *mut crate::gid_t,
         ngroups: *mut c_int,
+    ) -> c_int;
+
+    // link.h
+    pub fn dl_iterate_phdr(
+        callback: Option<
+            unsafe extern "C" fn(
+                info: *mut crate::dl_phdr_info,
+                size: size_t,
+                data: *mut c_void,
+            ) -> c_int,
+        >,
+        data: *mut c_void,
     ) -> c_int;
 
     // malloc.h
